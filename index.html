@@ -33,10 +33,10 @@
             height: 450px;
             border-radius: 20px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            margin: 20px 0;
+            margin: 20px 0 20px 140px; /* Ajout d'une marge à gauche pour éviter le chevauchement avec le logo */
             background: #1b263b;
             position: relative;
-            z-index: 1; /* Assure que la carte est en dessous du logo */
+            z-index: 1;
         }
         .earthquake-list {
             display: grid;
@@ -60,7 +60,17 @@
         .magnitude.low { color: #ff6b6b; }
         .magnitude.medium { color: #ffeb3b; }
         .magnitude.high { color: #d81b60; }
-        .no-data { font-size: 1.3em; padding: 20px; color: #778da9; }
+        .no-data {
+            font-size: 1.3em;
+            padding: 20px;
+            color: #e0e0e0;
+            background: rgba(255, 255, 255, 0.1); /* Effet de verre */
+            backdrop-filter: blur(10px); /* Flou pour l'effet de verre */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            animation: pulseGlow 3s ease-in-out infinite; /* Animation de pulsation douce */
+        }
         .update-info {
             font-size: 1.1em;
             margin: 15px 0;
@@ -68,6 +78,7 @@
             text-shadow: 0 0 10px rgba(255, 149, 0, 0.7);
             animation: glowOrange 2s infinite alternate;
             position: relative;
+            display: inline-block;
         }
         .update-info::after {
             content: '';
@@ -106,7 +117,7 @@
             left: 20px;
             width: 100px;
             height: 100px;
-            z-index: 2; /* Assure que le logo est au-dessus de la carte */
+            z-index: 2;
         }
         .logo {
             width: 100%;
@@ -115,7 +126,7 @@
             object-fit: cover;
             border: 3px solid #00d4ff;
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-            animation: borderGlow 5s linear infinite; /* Synchronisé avec l'orbite */
+            animation: borderGlow 5s linear infinite;
         }
         .orbit {
             position: absolute;
@@ -152,14 +163,19 @@
         }
         @keyframes borderGlow {
             0% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.5); }
-            25% { box-shadow: 0 0 20px rgba(0, 212, 255, 1); } /* Pic de lumière quand la particule est en haut */
+            25% { box-shadow: 0 0 20px rgba(0, 212, 255, 1); }
             50% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.5); }
-            75% { box-shadow: 0 0 20px rgba(0, 212, 255, 1); } /* Pic de lumière quand la particule est en bas */
+            75% { box-shadow: 0 0 20px rgba(0, 212, 255, 1); }
             100% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.5); }
         }
         @keyframes loadingBar {
             0% { width: 0; }
             100% { width: 100%; }
+        }
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); transform: scale(1); }
+            50% { box-shadow: 0 0 30px rgba(0, 212, 255, 0.8); transform: scale(1.02); }
+            100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); transform: scale(1); }
         }
     </style>
 </head>
@@ -201,6 +217,12 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
+            map.dragging.disable();
+            map.touchZoom.disable();
+            map.doubleClickZoom.disable();
+            map.scrollWheelZoom.disable();
+            map.boxZoom.disable();
+            map.keyboard.disable();
         } catch (error) {
             console.error('Map initialization error:', error);
         }
