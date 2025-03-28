@@ -33,7 +33,7 @@
             height: 450px;
             border-radius: 20px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            margin: 20px 0 20px 140px; /* Ajout d'une marge à gauche pour éviter le chevauchement avec le logo */
+            margin: 20px 0; /* Retire la marge à gauche pour recentrer */
             background: #1b263b;
             position: relative;
             z-index: 1;
@@ -64,12 +64,12 @@
             font-size: 1.3em;
             padding: 20px;
             color: #e0e0e0;
-            background: rgba(255, 255, 255, 0.1); /* Effet de verre */
-            backdrop-filter: blur(10px); /* Flou pour l'effet de verre */
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-            animation: pulseGlow 3s ease-in-out infinite; /* Animation de pulsation douce */
+            animation: calmGlow 6s ease-in-out infinite; /* Remplace pulseGlow par calmGlow */
         }
         .update-info {
             font-size: 1.1em;
@@ -91,6 +91,13 @@
             box-shadow: 0 0 10px rgba(255, 149, 0, 0.7);
             animation: loadingBar 60s linear infinite;
         }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
         .refresh-btn, .filter-btn {
             padding: 12px 30px;
             font-size: 1.2em;
@@ -101,7 +108,6 @@
             cursor: pointer;
             transition: background 0.3s ease, transform 0.2s ease;
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-            margin: 5px;
         }
         .refresh-btn:hover, .filter-btn:hover {
             background: #00b8d4;
@@ -172,10 +178,10 @@
             0% { width: 0; }
             100% { width: 100%; }
         }
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); transform: scale(1); }
-            50% { box-shadow: 0 0 30px rgba(0, 212, 255, 0.8); transform: scale(1.02); }
-            100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); transform: scale(1); }
+        @keyframes calmGlow {
+            0% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); color: #e0e0e0; }
+            50% { box-shadow: 0 0 20px rgba(0, 255, 128, 0.5); color: #d0f0d0; }
+            100% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.5); color: #e0e0e0; }
         }
     </style>
 </head>
@@ -188,8 +194,8 @@
         <h1>Earthquake Monitor - Bangkok</h1>
         <div id="map"></div>
         <div class="update-info" id="lastUpdate">Last Update: Loading...</div>
-        <button class="refresh-btn" id="refreshButton">Refresh Now</button>
-        <div>
+        <div class="button-group">
+            <button class="refresh-btn" id="refreshButton">Refresh Now</button>
             <button class="filter-btn" onclick="setFilter('1h')">Last Hour</button>
             <button class="filter-btn" onclick="setFilter('24h')">Last 24 Hours</button>
             <button class="filter-btn" onclick="setFilter('all')">All Recent</button>
@@ -217,12 +223,7 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
-            map.dragging.disable();
-            map.touchZoom.disable();
-            map.doubleClickZoom.disable();
-            map.scrollWheelZoom.disable();
-            map.boxZoom.disable();
-            map.keyboard.disable();
+            // Les interactions sont activées par défaut, donc on peut se déplacer et zoomer
         } catch (error) {
             console.error('Map initialization error:', error);
         }
