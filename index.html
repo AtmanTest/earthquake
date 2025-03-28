@@ -19,7 +19,7 @@
             margin: 0 auto;
             padding: 30px;
             text-align: center;
-            position: relative; /* Pour positionner le logo */
+            position: relative;
         }
         h1 {
             font-size: 3.5em;
@@ -59,7 +59,13 @@
         .magnitude.medium { color: #ffeb3b; }
         .magnitude.high { color: #d81b60; }
         .no-data { font-size: 1.3em; padding: 20px; color: #778da9; }
-        .update-info { font-size: 1.1em; margin: 15px 0; color: #a3bffa; }
+        .update-info {
+            font-size: 1.1em;
+            margin: 15px 0;
+            color: #ff9500; /* Orange */
+            text-shadow: 0 0 10px rgba(255, 149, 0, 0.7);
+            animation: glowOrange 2s infinite alternate;
+        }
         .refresh-btn, .filter-btn {
             padding: 12px 30px;
             font-size: 1.2em;
@@ -80,28 +86,66 @@
         .stats { font-size: 1.1em; margin: 20px 0; color: #a3bffa; }
         #magnitudeChart { max-width: 600px; margin: 20px auto; }
         footer { margin-top: 40px; font-size: 0.95em; color: #778da9; }
-        .logo {
+        .logo-container {
             position: absolute;
             top: 20px;
-            right: 20px;
+            left: 20px;
             width: 100px;
             height: 100px;
+        }
+        .logo {
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
             object-fit: cover;
             border: 3px solid #00d4ff;
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
         }
+        .orbit {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            animation: orbit 5s linear infinite;
+        }
+        .orbit::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background: #00d4ff;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 1);
+            transform: translateX(-50%);
+        }
         @keyframes glow {
             from { text-shadow: 0 0 10px rgba(0, 212, 255, 0.7); }
             to { text-shadow: 0 0 20px rgba(0, 212, 255, 1); }
+        }
+        @keyframes glowOrange {
+            from { text-shadow: 0 0 10px rgba(255, 149, 0, 0.7); }
+            to { text-shadow: 0 0 20px rgba(255, 149, 0, 1); }
+        }
+        @keyframes orbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Ajout du logo -->
-        <img src="logo.png" alt="Logo" class="logo">
+        <!-- Logo avec animation -->
+        <div class="logo-container">
+            <img src="logo.png" alt="Logo" class="logo">
+            <div class="orbit"></div>
+        </div>
         <h1>Earthquake Monitor - Bangkok</h1>
+        <div id="map"></div>
+        <!-- Boutons déplacés après la carte -->
         <div class="update-info" id="lastUpdate">Last Update: Loading...</div>
         <button class="refresh-btn" id="refreshButton">Refresh Now</button>
         <div>
@@ -109,7 +153,6 @@
             <button class="filter-btn" onclick="setFilter('24h')">Last 24 Hours</button>
             <button class="filter-btn" onclick="setFilter('all')">All Recent</button>
         </div>
-        <div id="map"></div>
         <div class="stats" id="stats">Earthquake Stats: Loading...</div>
         <canvas id="magnitudeChart"></canvas>
         <div class="earthquake-list" id="earthquakeList">
@@ -124,7 +167,7 @@
         const bangkokLat = 13.7563;
         const bangkokLon = 100.5018;
         const maxRadiusKm = 2000;
-        let filterPeriod = 'all';
+        let filterPeriod = '1h'; // Par défaut sur "Last Hour"
         let chart;
 
         let map;
