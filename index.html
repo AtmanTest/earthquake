@@ -35,6 +35,8 @@
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
             margin: 20px 0;
             background: #1b263b;
+            position: relative;
+            z-index: 1; /* Assure que la carte est en dessous du logo */
         }
         .earthquake-list {
             display: grid;
@@ -62,9 +64,21 @@
         .update-info {
             font-size: 1.1em;
             margin: 15px 0;
-            color: #ff9500; /* Orange */
+            color: #ff9500;
             text-shadow: 0 0 10px rgba(255, 149, 0, 0.7);
             animation: glowOrange 2s infinite alternate;
+            position: relative;
+        }
+        .update-info::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 3px;
+            background: #ff9500;
+            box-shadow: 0 0 10px rgba(255, 149, 0, 0.7);
+            animation: loadingBar 60s linear infinite;
         }
         .refresh-btn, .filter-btn {
             padding: 12px 30px;
@@ -92,6 +106,7 @@
             left: 20px;
             width: 100px;
             height: 100px;
+            z-index: 2; /* Assure que le logo est au-dessus de la carte */
         }
         .logo {
             width: 100%;
@@ -100,6 +115,7 @@
             object-fit: cover;
             border: 3px solid #00d4ff;
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            animation: borderGlow 5s linear infinite; /* Synchronisé avec l'orbite */
         }
         .orbit {
             position: absolute;
@@ -134,18 +150,27 @@
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
         }
+        @keyframes borderGlow {
+            0% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.5); }
+            25% { box-shadow: 0 0 20px rgba(0, 212, 255, 1); } /* Pic de lumière quand la particule est en haut */
+            50% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.5); }
+            75% { box-shadow: 0 0 20px rgba(0, 212, 255, 1); } /* Pic de lumière quand la particule est en bas */
+            100% { box-shadow: 0 0 10px rgba(0, 212, 255, 0.5); }
+        }
+        @keyframes loadingBar {
+            0% { width: 0; }
+            100% { width: 100%; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <!-- Logo avec animation -->
         <div class="logo-container">
             <img src="logo.png" alt="Logo" class="logo">
             <div class="orbit"></div>
         </div>
         <h1>Earthquake Monitor - Bangkok</h1>
         <div id="map"></div>
-        <!-- Boutons déplacés après la carte -->
         <div class="update-info" id="lastUpdate">Last Update: Loading...</div>
         <button class="refresh-btn" id="refreshButton">Refresh Now</button>
         <div>
@@ -167,7 +192,7 @@
         const bangkokLat = 13.7563;
         const bangkokLon = 100.5018;
         const maxRadiusKm = 2000;
-        let filterPeriod = '1h'; // Par défaut sur "Last Hour"
+        let filterPeriod = '1h';
         let chart;
 
         let map;
