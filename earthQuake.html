@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Earthquake Monitor - Bangkok</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: #0d1b2a;
+            color: #e0e0e0;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            padding: 30px;
+            text-align: center;
+        }
+        h1 {
+            font-size: 3.5em;
+            margin: 0 0 20px;
+            color: #00d4ff;
+            text-shadow: 0 0 10px rgba(0, 212, 255, 0.7);
+            animation: glow 2s infinite alternate;
+        }
+        #map {
+            width: 100%;
+            height: 450px;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            margin: 20px 0;
+            background: #1b263b;
+        }
+        .earthquake-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            padding: 20px;
+        }
+        .earthquake-card {
+            background: #1b263b;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #415a77;
+        }
+        .earthquake-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+            border-color: #00d4ff;
+        }
+        .magnitude.low { color: #ff6b6b; }
+        .magnitude.medium { color: #ffeb3b; }
+        .magnitude.high { color: #d81b60; }
+        .no-data { font-size: 1.3em; padding: 20px; color: #778da9; }
+        .update-info { font-size: 1.1em; margin: 15px 0; color: #a3bffa; }
+        .refresh-btn, .filter-btn {
+            padding: 12px 30px;
+            font-size: 1.2em;
+            background: #00d4ff;
+            color: #0d1b2a;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            margin: 5px;
+        }
+        .refresh-btn:hover, .filter-btn:hover {
+            background: #00b8d4;
+            transform: scale(1.05);
+        }
+        .refresh-btn:active, .filter-btn:active { transform: scale(0.95); }
+        .stats { font-size: 1.1em; margin: 20px 0; color: #a3bffa; }
+        #magnitudeChart { max-width: 600px; margin: 20px auto; }
+        footer { margin-top: 40px; font-size: 0.95em; color: #778da9; }
+        @keyframes glow {
+            from { text-shadow: 0 0 10px rgba(0, 212, 255, 0.7); }
+            to { text-shadow: 0 0 20px rgba(0, 212, 255, 1); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Earthquake Monitor - Bangkok</h1>
+        <div class="update-info" id="lastUpdate">Last Update: Loading...</div>
+        <button class="refresh-btn" id="refreshButton">Refresh Now</button>
+        <div>
+            <button class="filter-btn" onclick="setFilter('1h')">Last Hour</button>
+            <button class="filter-btn" onclick="setFilter('24h')">Last 24 Hours</button>
+            <button class="filter-btn" onclick="setFilter('all')">All Recent</button>
+        </div>
+        <div id="map"></div>
+        <div class="stats" id="stats">Earthquake Stats: Loading...</div>
+        <canvas id="magnitudeChart"></canvas>
+        <div class="earthquake-list" id="earthquakeList">
+            <p class="no-data">Loading data...</p>
+        </div>
+        <footer>Real-time data - Powered by xAI & USGS</footer>
+    </div>
+    <audio id="alertSound" src="https://www.soundjay.com/buttons/beep-01a.mp3"></audio>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        const bangkokLat = 13.7563;
+        const bangkokLon = 100.5018;
+        const maxRadiusKm = 2000;
+        let filterPeriod = 'all';
+        let chart;
+
+        let map;
+        try {
+            map = L.map('map').setView([bangkokLat, bangkokLon], 5);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+        } catch (error) {
+            console.error('Map initialization error:', error);
+        }
+
+        const ctx = document.getElementById('magnitudeChart').getContext('2d');
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: [{ label: 'Magnitude', data: [], borderColor: '#00d4ff', fill: false }] },
+            options: { scales: { y: { beginAtZero: true } } }
+        });
+
+        async function fetchEarthquakeData() {
+            let url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${bangkokLat}&longitude=${bangkokLon}&maxradiuskm=${maxRadiusKm}&minmagnitude=2&limit=10`;
+            if (filterPeriod === '1h') url += `&starttime=${new Date(Date.now() - 3600000).toISOString()}`;
+            if (filterPeriod === '24h') url += `&starttime=${new Date(Date.now() - 86400000).toISOString()}`;
+            try {
+                console.log('Fetching data from:', url);
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error: ${response.status} - ${response.statusText}`);
+                const data = await response.json();
+                console.log('Data received:', data);
+                return data.features && data.features.length ? data.features.map(quake => ({
+                    time: quake.properties.time ? new Date(quake.properties.time).toLocaleString() : 'Unknown time',
+                    magnitude: quake.properties.mag !== null ? quake.properties.mag : 'N/A',
+                    location: quake.properties.place || 'Unknown',
+                    depth: quake.geometry.coordinates[2] !== undefined ? `${quake.geometry.coordinates[2]} km` : 'N/A',
+                    lat: quake.geometry.coordinates[1],
+                    lon: quake.geometry.coordinates[0]
+                })) : [];
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function displayEarthquakes(data, error = null) {
+            const list = document.getElementById('earthquakeList');
+            list.innerHTML = '';
+            if (map) map.eachLayer(layer => { if (layer instanceof L.Marker) map.removeLayer(layer); });
+
+            if (error) {
+                list.innerHTML = `<p class="no-data">Error loading data: ${error.message}</p>`;
+            } else if (data.length === 0) {
+                list.innerHTML = '<p class="no-data">No recent earthquakes detected within 2000 km of Bangkok.</p>';
+            } else {
+                data.forEach(quake => {
+                    if (map) {
+                        const marker = L.marker([quake.lat, quake.lon]).addTo(map);
+                        marker.bindPopup(`Magnitude: ${quake.magnitude}<br>${quake.location}<br>${quake.time}`);
+                    }
+                    const magNum = typeof quake.magnitude === 'number' ? quake.magnitude : 0;
+                    const magClass = magNum >= 6 ? 'high' : magNum >= 4 ? 'medium' : 'low';
+                    if (magNum >= 5) document.getElementById('alertSound').play();
+                    const card = document.createElement('div');
+                    card.className = 'earthquake-card';
+                    card.innerHTML = `
+                        <div class="magnitude ${magClass}">${quake.magnitude}</div>
+                        <p><strong>Location:</strong> ${quake.location}</p>
+                        <p><strong>Time:</strong> ${quake.time}</p>
+                        <p><strong>Depth:</strong> ${quake.depth}</p>
+                    `;
+                    list.appendChild(card);
+                });
+            }
+
+            const stats = document.getElementById('stats');
+            const total = data.length;
+            const validMags = data.filter(q => typeof q.magnitude === 'number');
+            const avgMag = validMags.length ? (validMags.reduce((sum, q) => sum + q.magnitude, 0) / validMags.length).toFixed(2) : 'N/A';
+            const closest = total ? Math.min(...data.map(q => calculateDistance(bangkokLat, bangkokLon, q.lat, q.lon))).toFixed(2) : 'N/A';
+            const risk = total ? (data.some(q => q.magnitude > 6 && calculateDistance(bangkokLat, bangkokLon, q.lat, q.lon) < 500) ? 'High' : data.some(q => q.magnitude > 4) ? 'Moderate' : 'Low') : 'None';
+            stats.textContent = `Earthquake Stats: Total: ${total} | Avg Magnitude: ${avgMag} | Closest: ${closest} km | Risk: ${risk}`;
+
+            chart.data.labels = data.map(q => q.time && typeof q.time === 'string' ? q.time.split(',')[1]?.trim() || q.time : 'Unknown');
+            chart.data.datasets[0].data = data.map(q => typeof q.magnitude === 'number' ? q.magnitude : 0);
+            chart.update();
+
+            updateLastUpdate();
+        }
+
+        function updateLastUpdate() {
+            document.getElementById('lastUpdate').textContent = `Last Update: ${new Date().toLocaleString()}`;
+        }
+
+        async function refreshData() {
+            const refreshButton = document.getElementById('refreshButton');
+            refreshButton.disabled = true;
+            refreshButton.textContent = 'Refreshing...';
+            try {
+                const data = await fetchEarthquakeData();
+                displayEarthquakes(data);
+            } catch (error) {
+                displayEarthquakes([], error);
+            } finally {
+                refreshButton.disabled = false;
+                refreshButton.textContent = 'Refresh Now';
+            }
+        }
+
+        function setFilter(period) {
+            filterPeriod = period;
+            refreshData();
+        }
+
+        document.getElementById('refreshButton').addEventListener('click', refreshData);
+
+        fetchEarthquakeData().then(data => displayEarthquakes(data)).catch(err => {
+            displayEarthquakes([], err);
+        });
+
+        setInterval(refreshData, 60000);
+    </script>
+</body>
+</html>
