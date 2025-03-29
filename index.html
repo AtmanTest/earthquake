@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earthquake Monitor - PeeBabe</title>
+    <title>Earthquake Monitor - Bangkok</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -33,7 +33,7 @@
             height: 450px;
             border-radius: 20px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-            margin: 20px 0; /* Retire la marge à gauche pour recentrer */
+            margin: 20px 0;
             background: #1b263b;
             position: relative;
             z-index: 1;
@@ -69,7 +69,7 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
-            animation: calmGlow 6s ease-in-out infinite; /* Remplace pulseGlow par calmGlow */
+            animation: calmGlow 6s ease-in-out infinite;
         }
         .update-info {
             font-size: 1.1em;
@@ -155,6 +155,46 @@
             box-shadow: 0 0 15px rgba(0, 212, 255, 1);
             transform: translateX(-50%);
         }
+        /* Styles pour le module de flux d'actualités */
+        .news-feed {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+        .news-feed h2 {
+            font-size: 1.5em;
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+        .news-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background 0.3s ease;
+        }
+        .news-item:last-child {
+            border-bottom: none;
+        }
+        .news-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        .news-item a {
+            color: #a3bffa;
+            text-decoration: none;
+            font-size: 1em;
+        }
+        .news-item a:hover {
+            color: #00d4ff;
+            text-decoration: underline;
+        }
+        .news-item p {
+            font-size: 0.9em;
+            color: #778da9;
+            margin: 5px 0 0;
+        }
         @keyframes glow {
             from { text-shadow: 0 0 10px rgba(0, 212, 255, 0.7); }
             to { text-shadow: 0 0 20px rgba(0, 212, 255, 1); }
@@ -200,6 +240,12 @@
             <button class="filter-btn" onclick="setFilter('24h')">Last 24 Hours</button>
             <button class="filter-btn" onclick="setFilter('all')">All Recent</button>
         </div>
+        <div class="news-feed" id="newsFeed">
+            <h2>Latest News from Bangkok</h2>
+            <div id="newsList">
+                <p>Loading news...</p>
+            </div>
+        </div>
         <div class="stats" id="stats">Earthquake Stats: Loading...</div>
         <canvas id="magnitudeChart"></canvas>
         <div class="earthquake-list" id="earthquakeList">
@@ -223,7 +269,6 @@
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
-            // Les interactions sont activées par défaut, donc on peut se déplacer et zoomer
         } catch (error) {
             console.error('Map initialization error:', error);
         }
@@ -339,13 +384,52 @@
             refreshData();
         }
 
-        document.getElementById('refreshButton').addEventListener('click', refreshData);
+        // Fonction pour récupérer les actualités via NewsAPI
+        async function fetchNews() {
+            const apiKey = 'YOUR_NEWSAPI_KEY'; // Remplacez par votre clé API NewsAPI
+            const url = `https://newsapi.org/v2/everything?q=Bangkok&language=en&sortBy=publishedAt&apiKey=${apiKey}`;
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+                const data = await response.json();
+                return data.articles ? data.articles.slice(0, 5) : []; // Limite à 5 articles
+            } catch (error) {
+                console.error('News fetch error:', error);
+                return [];
+            }
+        }
 
+        // Fonction pour afficher les actualités
+        async function displayNews() {
+            const newsList = document.getElementById('newsList');
+            newsList.innerHTML = '<p>Loading news...</p>';
+            const articles = await fetchNews();
+            newsList.innerHTML = '';
+            if (articles.length === 0) {
+                newsList.innerHTML = '<p>No recent news found for Bangkok.</p>';
+            } else {
+                articles.forEach(article => {
+                    const newsItem = document.createElement('div');
+                    newsItem.className = 'news-item';
+                    newsItem.innerHTML = `
+                        <a href="${article.url}" target="_blank">${article.title}</a>
+                        <p>${new Date(article.publishedAt).toLocaleString()}</p>
+                    `;
+                    newsList.appendChild(newsItem);
+                });
+            }
+        }
+
+        // Initialisation
+        document.getElementById('refreshButton').addEventListener('click', refreshData);
         fetchEarthquakeData().then(data => displayEarthquakes(data)).catch(err => {
             displayEarthquakes([], err);
         });
-
         setInterval(refreshData, 60000);
+
+        // Charger les actualités au démarrage et toutes les 10 minutes
+        displayNews();
+        setInterval(displayNews, 600000); // 10 minutes
     </script>
 </body>
 </html>
