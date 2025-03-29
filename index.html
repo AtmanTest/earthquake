@@ -13,13 +13,63 @@
             background: #0d1b2a;
             color: #e0e0e0;
             overflow-x: hidden;
+            display: flex;
+        }
+        .sidebar {
+            width: 200px;
+            background: #1b263b;
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+            z-index: 2;
+        }
+        .logo-container {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto;
+        }
+        .logo {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            animation: borderGlow 5s linear infinite;
+        }
+        .orbit {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            animation: orbit 5s linear infinite;
+        }
+        .orbit::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background: #00d4ff;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 1);
+            transform: translateX(-50%);
+        }
+        .main-content {
+            margin-left: 200px;
+            flex: 1;
+            padding: 30px;
         }
         .container {
             max-width: 1300px;
             margin: 0 auto;
-            padding: 30px;
             text-align: center;
-            position: relative;
         }
         h1 {
             font-size: 3.5em;
@@ -63,9 +113,9 @@
         .no-data {
             font-size: 1.3em;
             padding: 20px;
-            color: #2e8b57; /* Vert foncé */
-            text-shadow: 0 0 10px rgba(46, 139, 87, 0.8), 0 0 20px rgba(46, 139, 87, 0.6); /* Glow vert foncé */
-            background: linear-gradient(90deg, #00b7eb, #1e90ff); /* Dégradé bleu Superman */
+            color: #39ff14; /* Vert fluo */
+            text-shadow: 0 0 10px rgba(57, 255, 20, 0.8), 0 0 20px rgba(57, 255, 20, 0.6); /* Glow vert fluo */
+            background: linear-gradient(90deg, #00d4ff, #87cefa); /* Dégradé bleu clair */
             backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 10px;
@@ -119,44 +169,6 @@
         .stats { font-size: 1.1em; margin: 20px 0; color: #a3bffa; }
         #magnitudeChart { max-width: 600px; margin: 20px auto; }
         footer { margin-top: 40px; font-size: 0.95em; color: #778da9; }
-        .logo-container {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 100px;
-            height: 100px;
-            z-index: 2;
-        }
-        .logo {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #00d4ff;
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-            animation: borderGlow 5s linear infinite;
-        }
-        .orbit {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            animation: orbit 5s linear infinite;
-        }
-        .orbit::before {
-            content: '';
-            position: absolute;
-            top: -5px;
-            left: 50%;
-            width: 10px;
-            height: 10px;
-            background: #00d4ff;
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 1);
-            transform: translateX(-50%);
-        }
         /* Styles pour le module de flux d'actualités avec onglets */
         .news-feed {
             margin: 20px 0;
@@ -256,44 +268,48 @@
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="sidebar">
         <div class="logo-container">
             <img src="logo.png" alt="Logo" class="logo">
             <div class="orbit"></div>
         </div>
-        <h1>Earthquake Monitor - Bangkok</h1>
-        <div class="no-data" id="noDataMessage" style="display: none;">No recent earthquakes detected within 2000 km of Bangkok.</div>
-        <div id="map"></div>
-        <div class="update-info" id="lastUpdate">Last Update: Loading...</div>
-        <div class="button-group">
-            <button class="refresh-btn" id="refreshButton">Refresh Now</button>
-            <button class="filter-btn" onclick="setFilter('1h')">Last Hour</button>
-            <button class="filter-btn" onclick="setFilter('24h')">Last 24 Hours</button>
-            <button class="filter-btn" onclick="setFilter('all')">All Recent</button>
-        </div>
-        <div class="news-feed" id="newsFeed">
-            <h2>Latest News</h2>
-            <div class="tabs">
-                <button class="tab-btn active" onclick="showTab('bangkok')">Bangkok</button>
-                <button class="tab-btn" onclick="showTab('myanmar')">Myanmar</button>
+    </div>
+    <div class="main-content">
+        <div class="container">
+            <h1>Earthquake Monitor - Bangkok</h1>
+            <div class="no-data" id="noDataMessage" style="display: none;">No recent earthquakes detected within 2000 km of Bangkok.</div>
+            <div id="map"></div>
+            <div class="update-info" id="lastUpdate">Last Update: Loading...</div>
+            <div class="button-group">
+                <button class="refresh-btn" id="refreshButton">Refresh Now</button>
+                <button class="filter-btn" onclick="setFilter('1h')">Last Hour</button>
+                <button class="filter-btn" onclick="setFilter('24h')">Last 24 Hours</button>
+                <button class="filter-btn" onclick="setFilter('all')">All Recent</button>
             </div>
-            <div id="bangkok" class="tab-content active">
-                <div id="bangkokNewsList">
-                    <p>Loading news for Bangkok...</p>
+            <div class="news-feed" id="newsFeed">
+                <h2>Latest News</h2>
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="showTab('bangkok')">Bangkok</button>
+                    <button class="tab-btn" onclick="showTab('myanmar')">Myanmar</button>
+                </div>
+                <div id="bangkok" class="tab-content active">
+                    <div id="bangkokNewsList">
+                        <p>Loading news for Bangkok...</p>
+                    </div>
+                </div>
+                <div id="myanmar" class="tab-content">
+                    <div id="myanmarNewsList">
+                        <p>Loading news for Myanmar...</p>
+                    </div>
                 </div>
             </div>
-            <div id="myanmar" class="tab-content">
-                <div id="myanmarNewsList">
-                    <p>Loading news for Myanmar...</p>
-                </div>
+            <div class="stats" id="stats">Earthquake Stats: Loading...</div>
+            <canvas id="magnitudeChart"></canvas>
+            <div class="earthquake-list" id="earthquakeList">
+                <p class="no-data">Loading data...</p>
             </div>
+            <footer>Real-time data - Powered by xAI & USGS</footer>
         </div>
-        <div class="stats" id="stats">Earthquake Stats: Loading...</div>
-        <canvas id="magnitudeChart"></canvas>
-        <div class="earthquake-list" id="earthquakeList">
-            <p class="no-data">Loading data...</p>
-        </div>
-        <footer>Real-time data - Powered by xAI & USGS</footer>
     </div>
     <audio id="alertSound" src="https://www.soundjay.com/buttons/beep-01a.mp3"></audio>
 
@@ -302,7 +318,7 @@
         const bangkokLat = 13.7563;
         const bangkokLon = 100.5018;
         const maxRadiusKm = 2000;
-        let filterPeriod = '1h';
+        let filterPeriod = '24h'; // Par défaut : Last 24 Hours
         let chart;
 
         let map;
