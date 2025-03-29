@@ -13,63 +13,13 @@
             background: #0d1b2a;
             color: #e0e0e0;
             overflow-x: hidden;
-            display: flex;
-        }
-        .sidebar {
-            width: 200px;
-            background: #1b263b;
-            padding: 20px;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
-            z-index: 2;
-        }
-        .logo-container {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto;
-        }
-        .logo {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 3px solid #00d4ff;
-            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
-            animation: borderGlow 5s linear infinite;
-        }
-        .orbit {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            animation: orbit 5s linear infinite;
-        }
-        .orbit::before {
-            content: '';
-            position: absolute;
-            top: -5px;
-            left: 50%;
-            width: 10px;
-            height: 10px;
-            background: #00d4ff;
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(0, 212, 255, 1);
-            transform: translateX(-50%);
-        }
-        .main-content {
-            margin-left: 200px;
-            flex: 1;
-            padding: 30px;
         }
         .container {
             max-width: 1300px;
             margin: 0 auto;
+            padding: 30px;
             text-align: center;
+            position: relative;
         }
         h1 {
             font-size: 3.5em;
@@ -169,7 +119,45 @@
         .stats { font-size: 1.1em; margin: 20px 0; color: #a3bffa; }
         #magnitudeChart { max-width: 600px; margin: 20px auto; }
         footer { margin-top: 40px; font-size: 0.95em; color: #778da9; }
-        /* Styles pour le module de flux d'actualités avec onglets */
+        .logo-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 100px;
+            height: 100px;
+            z-index: 2;
+        }
+        .logo {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #00d4ff;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+            animation: borderGlow 5s linear infinite;
+        }
+        .orbit {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            animation: orbit 5s linear infinite;
+        }
+        .orbit::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            width: 10px;
+            height: 10px;
+            background: #00d4ff;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 1);
+            transform: translateX(-50%);
+        }
+        /* Styles pour le module de flux d'actualités avec carrousel */
         .news-feed {
             margin: 20px 0;
             padding: 20px;
@@ -212,7 +200,17 @@
         .tab-content.active {
             display: block;
         }
+        .news-carousel {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+        }
+        .news-list {
+            display: flex;
+            transition: transform 0.5s ease-in-out;
+        }
         .news-item {
+            flex: 0 0 100%;
             padding: 10px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             transition: background 0.3s ease;
@@ -236,6 +234,27 @@
             font-size: 0.9em;
             color: #778da9;
             margin: 5px 0 0;
+        }
+        .carousel-nav {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            transform: translateY(-50%);
+        }
+        .carousel-nav button {
+            background: rgba(0, 212, 255, 0.5);
+            border: none;
+            color: #fff;
+            font-size: 1.5em;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+        .carousel-nav button:hover {
+            background: rgba(0, 212, 255, 0.8);
         }
         @keyframes glow {
             from { text-shadow: 0 0 10px rgba(0, 212, 255, 0.7); }
@@ -268,48 +287,56 @@
     </style>
 </head>
 <body>
-    <div class="sidebar">
+    <div class="container">
         <div class="logo-container">
             <img src="logo.png" alt="Logo" class="logo">
             <div class="orbit"></div>
         </div>
-    </div>
-    <div class="main-content">
-        <div class="container">
-            <h1>Earthquake Monitor - Bangkok</h1>
-            <div class="no-data" id="noDataMessage" style="display: none;">No recent earthquakes detected within 2000 km of Bangkok.</div>
-            <div id="map"></div>
-            <div class="update-info" id="lastUpdate">Last Update: Loading...</div>
-            <div class="button-group">
-                <button class="refresh-btn" id="refreshButton">Refresh Now</button>
-                <button class="filter-btn" onclick="setFilter('1h')">Last Hour</button>
-                <button class="filter-btn" onclick="setFilter('24h')">Last 24 Hours</button>
-                <button class="filter-btn" onclick="setFilter('all')">All Recent</button>
+        <h1>Earthquake Monitor - Bangkok</h1>
+        <div class="no-data" id="noDataMessage" style="display: none;">No recent earthquakes detected within 2000 km of Bangkok.</div>
+        <div id="map"></div>
+        <div class="update-info" id="lastUpdate">Last Update: Loading...</div>
+        <div class="button-group">
+            <button class="refresh-btn" id="refreshButton">Refresh Now</button>
+            <button class="filter-btn" onclick="setFilter('1h')">Last Hour</button>
+            <button class="filter-btn" onclick="setFilter('24h')">Last 24 Hours</button>
+            <button class="filter-btn" onclick="setFilter('all')">All Recent</button>
+        </div>
+        <div class="news-feed" id="newsFeed">
+            <h2>Latest News</h2>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('bangkok')">Bangkok</button>
+                <button class="tab-btn" onclick="showTab('myanmar')">Myanmar</button>
             </div>
-            <div class="news-feed" id="newsFeed">
-                <h2>Latest News</h2>
-                <div class="tabs">
-                    <button class="tab-btn active" onclick="showTab('bangkok')">Bangkok</button>
-                    <button class="tab-btn" onclick="showTab('myanmar')">Myanmar</button>
-                </div>
-                <div id="bangkok" class="tab-content active">
-                    <div id="bangkokNewsList">
+            <div id="bangkok" class="tab-content active">
+                <div class="news-carousel" id="bangkokNewsCarousel">
+                    <div class="news-list" id="bangkokNewsList">
                         <p>Loading news for Bangkok...</p>
                     </div>
-                </div>
-                <div id="myanmar" class="tab-content">
-                    <div id="myanmarNewsList">
-                        <p>Loading news for Myanmar...</p>
+                    <div class="carousel-nav">
+                        <button onclick="prevNews('bangkok')">&#10094;</button>
+                        <button onclick="nextNews('bangkok')">&#10095;</button>
                     </div>
                 </div>
             </div>
-            <div class="stats" id="stats">Earthquake Stats: Loading...</div>
-            <canvas id="magnitudeChart"></canvas>
-            <div class="earthquake-list" id="earthquakeList">
-                <p class="no-data">Loading data...</p>
+            <div id="myanmar" class="tab-content">
+                <div class="news-carousel" id="myanmarNewsCarousel">
+                    <div class="news-list" id="myanmarNewsList">
+                        <p>Loading news for Myanmar...</p>
+                    </div>
+                    <div class="carousel-nav">
+                        <button onclick="prevNews('myanmar')">&#10094;</button>
+                        <button onclick="nextNews('myanmar')">&#10095;</button>
+                    </div>
+                </div>
             </div>
-            <footer>Real-time data - Powered by xAI & USGS</footer>
         </div>
+        <div class="stats" id="stats">Earthquake Stats: Loading...</div>
+        <canvas id="magnitudeChart"></canvas>
+        <div class="earthquake-list" id="earthquakeList">
+            <p class="no-data">Loading data...</p>
+        </div>
+        <footer>Real-time data - Powered by xAI & USGS</footer>
     </div>
     <audio id="alertSound" src="https://www.soundjay.com/buttons/beep-01a.mp3"></audio>
 
@@ -477,17 +504,61 @@
             }
         }
 
+        // Gestion du carrousel pour chaque onglet
+        const carouselStates = {
+            bangkok: { currentIndex: 0, articles: [] },
+            myanmar: { currentIndex: 0, articles: [] }
+        };
+
+        function prevNews(tabId) {
+            const state = carouselStates[tabId];
+            if (state.currentIndex > 0) {
+                state.currentIndex--;
+                updateCarousel(tabId);
+            }
+        }
+
+        function nextNews(tabId) {
+            const state = carouselStates[tabId];
+            if (state.currentIndex < state.articles.length - 1) {
+                state.currentIndex++;
+                updateCarousel(tabId);
+            }
+        }
+
+        function updateCarousel(tabId) {
+            const state = carouselStates[tabId];
+            const newsList = document.getElementById(`${tabId}NewsList`);
+            newsList.style.transform = `translateX(-${state.currentIndex * 100}%)`;
+        }
+
         // Fonction pour afficher les actualités
         async function displayNews(location, elementId) {
             const newsList = document.getElementById(elementId);
             newsList.innerHTML = `<p>Loading news for ${location}...</p>`;
             const query = `${location} earthquake`; // Recherche générale sur les tremblements de terre
             const articles = await fetchNews(query, location);
+
+            // Supprimer les doublons en comparant les URLs
+            const uniqueArticles = [];
+            const seenUrls = new Set();
+            for (const article of articles) {
+                if (!seenUrls.has(article.url)) {
+                    seenUrls.add(article.url);
+                    uniqueArticles.push(article);
+                }
+            }
+
+            // Mettre à jour l'état du carrousel
+            const tabId = elementId === 'bangkokNewsList' ? 'bangkok' : 'myanmar';
+            carouselStates[tabId].articles = uniqueArticles;
+            carouselStates[tabId].currentIndex = 0;
+
             newsList.innerHTML = '';
-            if (articles.length === 0) {
+            if (uniqueArticles.length === 0) {
                 newsList.innerHTML = `<p>No recent news found for ${location} in the selected time period.</p>`;
             } else {
-                articles.forEach(article => {
+                uniqueArticles.forEach(article => {
                     const newsItem = document.createElement('div');
                     newsItem.className = 'news-item';
                     newsItem.innerHTML = `
@@ -496,6 +567,7 @@
                     `;
                     newsList.appendChild(newsItem);
                 });
+                updateCarousel(tabId);
             }
         }
 
