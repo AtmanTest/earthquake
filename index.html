@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earthquake Monitor - Bangkok</title>
+    <title>Earthquake Monitor - Peebabe</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -293,7 +293,6 @@
             <div class="orbit"></div>
         </div>
         <h1>Earthquake Monitor - Bangkok</h1>
-        <div class="no-data" id="noDataMessage" style="display: none;">No recent earthquakes detected within 2000 km of Bangkok.</div>
         <div id="map"></div>
         <div class="update-info" id="lastUpdate">Last Update: Loading...</div>
         <div class="button-group">
@@ -302,6 +301,7 @@
             <button class="filter-btn" onclick="setFilter('24h')">Last 24 Hours</button>
             <button class="filter-btn" onclick="setFilter('all')">All Recent</button>
         </div>
+        <div class="no-data" id="noDataMessage" style="display: none;">No recent earthquakes detected within 2000 km of Bangkok.</div>
         <div class="news-feed" id="newsFeed">
             <h2>Latest News</h2>
             <div class="tabs">
@@ -314,8 +314,8 @@
                         <p>Loading news for Bangkok...</p>
                     </div>
                     <div class="carousel-nav">
-                        <button onclick="prevNews('bangkok')">&#10094;</button>
-                        <button onclick="nextNews('bangkok')">&#10095;</button>
+                        <button onclick="prevNews('bangkok')">❮</button>
+                        <button onclick="nextNews('bangkok')">❯</button>
                     </div>
                 </div>
             </div>
@@ -325,8 +325,8 @@
                         <p>Loading news for Myanmar...</p>
                     </div>
                     <div class="carousel-nav">
-                        <button onclick="prevNews('myanmar')">&#10094;</button>
-                        <button onclick="nextNews('myanmar')">&#10095;</button>
+                        <button onclick="prevNews('myanmar')">❮</button>
+                        <button onclick="nextNews('myanmar')">❯</button>
                     </div>
                 </div>
             </div>
@@ -345,7 +345,8 @@
         const bangkokLat = 13.7563;
         const bangkokLon = 100.5018;
         const maxRadiusKm = 2000;
-        let filterPeriod = '24h'; // Par défaut : Last 24 Hours
+        let filterPeriod = '1h'; // Par défaut pour les données sismiques : Last Hour
+        let newsFilterPeriod = '24h'; // Par défaut pour les actualités : Last 24 Hours
         let chart;
 
         let map;
@@ -483,9 +484,9 @@
             // Appliquer le filtre de période pour les actualités
             const now = new Date();
             let fromDate;
-            if (filterPeriod === '1h') {
+            if (newsFilterPeriod === '1h') {
                 fromDate = new Date(now.getTime() - 3600000).toISOString().split('.')[0] + 'Z';
-            } else if (filterPeriod === '24h') {
+            } else if (newsFilterPeriod === '24h') {
                 fromDate = new Date(now.getTime() - 86400000).toISOString().split('.')[0] + 'Z';
             } else {
                 fromDate = '2025-03-28T00:00:00Z'; // Depuis le 28 mars 2025 pour "All Recent"
