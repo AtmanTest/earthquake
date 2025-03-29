@@ -136,6 +136,19 @@
         .seen-quakes li:last-child {
             border-bottom: none;
         }
+        .seen-quakes .clear-btn {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #ff6b6b;
+            color: #0d1b2a;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .seen-quakes .clear-btn:hover {
+            background: #e05a5a;
+        }
         .emergency-measures {
             margin: 20px 0;
             padding: 20px;
@@ -391,6 +404,7 @@
         <div class="seen-quakes" id="seenQuakes">
             <h2>Seen Earthquakes History</h2>
             <ul id="seenQuakesList"></ul>
+            <button class="clear-btn" onclick="clearSeenQuakes()">Clear History</button>
         </div>
         <div class="button-group">
             <button class="refresh-btn" id="refreshButton">Refresh Now</button>
@@ -407,28 +421,7 @@
                 <li><strong>Drop, Cover, and Hold On:</strong> Drop to your hands and knees, cover your head and neck (under a sturdy table if possible), and hold on until the shaking stops.</li>
                 <li><strong>Stay Indoors:</strong> Avoid running outside during the shaking. Falling debris can be dangerous.</li>
                 <li><strong>Avoid Doorways:</strong> Doorways are not necessarily safer and may swing violently.</li>
-                <li><strongI can see in 24 hours: 5.1
-Location: 19 km SW of Nay Pyi Taw, Burma (Myanmar)
-
-Time: 3/29/2025, 10:20:48 AM
-
-Depth: 10 km
-
-Seen
-4.5
-Location: 22 km S of Yamethin, Burma (Myanmar)
-
-Time: 3/28/2025, 5:46:21 PM
-
-Depth: 10 km
-
-Seen
-4.5
-Location: Burma
-
-Time: 3/28/2025, 12:16:50 PM
-
-Depth: 10 km>Stay Away from Windows:</strong> Glass can shatter and cause injuries.</li>
+                <li><strong>Stay Away from Windows:</strong> Glass can shatter and cause injuries.</li>
             </ul>
             <h3>After an Earthquake</h3>
             <ul>
@@ -622,20 +615,35 @@ Depth: 10 km>Stay Away from Windows:</strong> Glass can shatter and cause injuri
             console.log('Marking as seen:', quakeId);
             console.log('Current quakes:', currentQuakes);
             const quake = currentQuakes.find(q => q.id === quakeId);
-            if (quake && !seenQuakes.includes(quakeId)) {
-                seenQuakes.push(quakeId);
-                seenQuakesData.push({
-                    id: quake.id,
-                    magnitude: quake.magnitude,
-                    location: quake.location
-                });
-                localStorage.setItem('seenQuakes', JSON.stringify(seenQuakes));
-                localStorage.setItem('seenQuakesData', JSON.stringify(seenQuakesData));
-                console.log('Updated seenQuakesData:', seenQuakesData);
-                displaySeenQuakes();
-            } else if (!quake) {
+            if (quake) {
+                if (!seenQuakes.includes(quakeId)) {
+                    seenQuakes.push(quakeId);
+                    seenQuakesData.push({
+                        id: quake.id,
+                        magnitude: quake.magnitude,
+                        location: quake.location
+                    });
+                    localStorage.setItem('seenQuakes', JSON.stringify(seenQuakes));
+                    localStorage.setItem('seenQuakesData', JSON.stringify(seenQuakesData));
+                    console.log('Updated seenQuakes:', seenQuakes);
+                    console.log('Updated seenQuakesData:', seenQuakesData);
+                    displaySeenQuakes();
+                } else {
+                    console.log('Quake already marked as seen:', quakeId);
+                }
+            } else {
                 console.error('Quake not found in currentQuakes:', quakeId);
             }
+        }
+
+        // Clear seen earthquakes history
+        function clearSeenQuakes() {
+            seenQuakes = [];
+            seenQuakesData = [];
+            localStorage.setItem('seenQuakes', JSON.stringify(seenQuakes));
+            localStorage.setItem('seenQuakesData', JSON.stringify(seenQuakesData));
+            console.log('Cleared seen quakes');
+            displaySeenQuakes();
         }
 
         // Display seen earthquakes
@@ -697,7 +705,7 @@ Depth: 10 km>Stay Away from Windows:</strong> Glass can shatter and cause injuri
                     const card = document.createElement('div');
                     card.className = 'earthquake-card';
                     card.innerHTML = `
-                        <button class="seen-btn" onclick="markAsSeen('${quake.id}')">Seen</button>
+                        <button class="seen-btn" onclick="markAsSeen('${quake.id}')">${isSeen ? 'Seen' : 'Mark as Seen'}</button>
                         <div class="magnitude ${magClass}">${quake.magnitude}</div>
                         <p><strong>Location:</strong> ${quake.location}</p>
                         <p><strong>Time:</strong> ${quake.time}</p>
@@ -879,10 +887,40 @@ Depth: 10 km>Stay Away from Windows:</strong> Glass can shatter and cause injuri
             document.querySelector(`.tab-btn[onclick="showTab('${tabId}')"]`).classList.add('active');
         }
 
+        // Pre-mark some earthquakes as seen for testing
+        function initializeSeenQuakes() {
+            // Check if the quakes are already in seenQuakesData to avoid duplicates
+            const quake1 = mockEarthquakeData[0]; // 5.1 in Nay Pyi Taw
+            const quake2 = mockEarthquakeData[1]; // 4.5 in Yamethin
+            if (!seenQuakes.includes(quake1.id)) {
+                seenQuakes.push(quake1.id);
+                seenQuakesData.push({
+                    id: quake1.id,
+                    magnitude: quake1.magnitude,
+                    location: quake1.location
+                });
+            }
+            if (!seenQuakes.includes(quake2.id)) {
+                seenQuakes.push(quake2.id);
+                seenQuakesData.push({
+                    id: quake2.id,
+                    magnitude: quake2.magnitude,
+                    location: quake2.location
+                });
+            }
+            localStorage.setItem('seenQuakes', JSON.stringify(seenQuakes));
+            localStorage.setItem('seenQuakesData', JSON.stringify(seenQuakesData));
+            console.log('Initialized seen quakes:', seenQuakesData);
+            displaySeenQuakes();
+        }
+
         // Initialize the page
         document.getElementById('refreshButton').addEventListener('click', refreshData);
         initializeMap();
-        fetchEarthquakeData().then(data => displayEarthquakes(data)).catch(err => {
+        fetchEarthquakeData().then(data => {
+            displayEarthquakes(data);
+            initializeSeenQuakes(); // Pre-mark quakes as seen after data is loaded
+        }).catch(err => {
             displayEarthquakes([], err);
         });
         setInterval(refreshData, 60000);
