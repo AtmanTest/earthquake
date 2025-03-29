@@ -407,7 +407,28 @@
                 <li><strong>Drop, Cover, and Hold On:</strong> Drop to your hands and knees, cover your head and neck (under a sturdy table if possible), and hold on until the shaking stops.</li>
                 <li><strong>Stay Indoors:</strong> Avoid running outside during the shaking. Falling debris can be dangerous.</li>
                 <li><strong>Avoid Doorways:</strong> Doorways are not necessarily safer and may swing violently.</li>
-                <li><strong>Stay Away from Windows:</strong> Glass can shatter and cause injuries.</li>
+                <li><strongI can see in 24 hours: 5.1
+Location: 19 km SW of Nay Pyi Taw, Burma (Myanmar)
+
+Time: 3/29/2025, 10:20:48 AM
+
+Depth: 10 km
+
+Seen
+4.5
+Location: 22 km S of Yamethin, Burma (Myanmar)
+
+Time: 3/28/2025, 5:46:21 PM
+
+Depth: 10 km
+
+Seen
+4.5
+Location: Burma
+
+Time: 3/28/2025, 12:16:50 PM
+
+Depth: 10 km>Stay Away from Windows:</strong> Glass can shatter and cause injuries.</li>
             </ul>
             <h3>After an Earthquake</h3>
             <ul>
@@ -472,11 +493,11 @@
         const bangkokLat = 13.7563;
         const bangkokLon = 100.5018;
         const maxRadiusKm = 2000;
-        let filterPeriod = '1h'; // Default for seismic data: Last Hour
+        let filterPeriod = '24h'; // Set to 24 hours to match your data
         let newsFilterPeriod = '24h'; // Default for news: Last 24 Hours
         let chart;
         let alertSoundEnabled = true; // Global alert sound state
-        let seenQuakes = JSON.parse(localStorage.getItem('seenQuakes')) || []; // List of "seen" earthquakes
+        let seenQuakes = JSON.parse(localStorage.getItem('seenQuakes')) || []; // List of "seen" earthquake IDs
         let seenQuakesData = JSON.parse(localStorage.getItem('seenQuakesData')) || []; // Store full data of seen quakes
         let map;
 
@@ -506,8 +527,44 @@
             options: { scales: { y: { beginAtZero: true } } }
         });
 
-        // Fetch earthquake data from USGS
+        // Mock earthquake data based on your input
+        const mockEarthquakeData = [
+            {
+                id: 'us6000m0n1',
+                time: '3/29/2025, 10:20:48 AM',
+                magnitude: 5.1,
+                location: '19 km SW of Nay Pyi Taw, Burma (Myanmar)',
+                depth: '10 km',
+                lat: 19.7450,
+                lon: 96.1297
+            },
+            {
+                id: 'us6000m0n2',
+                time: '3/28/2025, 5:46:21 PM',
+                magnitude: 4.5,
+                location: '22 km S of Yamethin, Burma (Myanmar)',
+                depth: '10 km',
+                lat: 20.4318,
+                lon: 96.1389
+            },
+            {
+                id: 'us6000m0n3',
+                time: '3/28/2025, 12:16:50 PM',
+                magnitude: 4.5,
+                location: 'Burma',
+                depth: '10 km',
+                lat: 21.0000,
+                lon: 96.0000
+            }
+        ];
+
+        // Fetch earthquake data from USGS (or use mock data for testing)
         async function fetchEarthquakeData() {
+            // For testing, return mock data
+            return mockEarthquakeData;
+
+            // Uncomment to fetch real data from USGS
+            /*
             let url = `https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&latitude=${bangkokLat}&longitude=${bangkokLon}&maxradiuskm=${maxRadiusKm}&minmagnitude=2&limit=10`;
             if (filterPeriod === '1h') url += `&starttime=${new Date(Date.now() - 3600000).toISOString()}`;
             if (filterPeriod === '24h') url += `&starttime=${new Date(Date.now() - 86400000).toISOString()}`;
@@ -530,6 +587,7 @@
                 console.error('Fetch error:', error);
                 throw error;
             }
+            */
         }
 
         // Parse location to extract country and city
@@ -538,8 +596,12 @@
             const parts = location.split(',').map(part => part.trim());
             let country = parts[parts.length - 1] || 'Unknown';
             let city = parts[parts.length - 2] || parts[0] || 'Unknown';
-            // Clean up city name by removing distance and direction (e.g., "10 km S of Yangon" -> "Yangon")
+            // Clean up city name by removing distance and direction (e.g., "19 km SW of Nay Pyi Taw" -> "Nay Pyi Taw")
             city = city.replace(/^\d+\s*km\s*[NSEW]+\s*of\s*/i, '');
+            // Handle cases where country includes additional info in parentheses (e.g., "Burma (Myanmar)")
+            if (country.includes('(')) {
+                country = country.match(/\(([^)]+)\)/)?.[1] || country;
+            }
             return { country, city };
         }
 
@@ -557,6 +619,8 @@
 
         // Mark an earthquake as seen and store its data
         function markAsSeen(quakeId) {
+            console.log('Marking as seen:', quakeId);
+            console.log('Current quakes:', currentQuakes);
             const quake = currentQuakes.find(q => q.id === quakeId);
             if (quake && !seenQuakes.includes(quakeId)) {
                 seenQuakes.push(quakeId);
@@ -567,12 +631,16 @@
                 });
                 localStorage.setItem('seenQuakes', JSON.stringify(seenQuakes));
                 localStorage.setItem('seenQuakesData', JSON.stringify(seenQuakesData));
+                console.log('Updated seenQuakesData:', seenQuakesData);
                 displaySeenQuakes();
+            } else if (!quake) {
+                console.error('Quake not found in currentQuakes:', quakeId);
             }
         }
 
         // Display seen earthquakes
         function displaySeenQuakes() {
+            console.log('Displaying seen quakes:', seenQuakesData);
             const seenQuakesList = document.getElementById('seenQuakesList');
             seenQuakesList.innerHTML = '';
             if (seenQuakesData.length === 0) {
@@ -605,6 +673,7 @@
             if (map) map.eachLayer(layer => { if (layer instanceof L.Marker) map.removeLayer(layer); });
 
             currentQuakes = data; // Store current quakes for reference in markAsSeen
+            console.log('Current quakes updated:', currentQuakes);
 
             if (error) {
                 list.innerHTML = `<p class="no-data">Error loading data: ${error.message}</p>`;
