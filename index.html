@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earthquake Jinglor - Peebabe</title>
+    <title>Earthquake Monitor - Bangkok</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -51,6 +51,7 @@
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             border: 1px solid #415a77;
+            position: relative;
         }
         .earthquake-card:hover {
             transform: translateY(-8px);
@@ -60,6 +61,21 @@
         .magnitude.low { color: #ff6b6b; }
         .magnitude.medium { color: #ffeb3b; }
         .magnitude.high { color: #d81b60; }
+        .seen-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            background: #ff9500;
+            color: #0d1b2a;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        .seen-btn:hover {
+            background: #e08500;
+        }
         .no-data {
             font-size: 1.3em;
             padding: 20px;
@@ -100,7 +116,7 @@
             flex-wrap: wrap;
             margin: 15px 0;
         }
-        .refresh-btn, .filter-btn {
+        .refresh-btn, .filter-btn, .toggle-alert-btn {
             padding: 12px 30px;
             font-size: 1.2em;
             background: #00d4ff;
@@ -111,11 +127,22 @@
             transition: background 0.3s ease, transform 0.2s ease;
             box-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
         }
-        .refresh-btn:hover, .filter-btn:hover {
-            background: #00b8d4;
-            transform: scale(1.05);
+        .toggle-alert-btn {
+            background: #ff6b6b;
         }
-        .refresh-btn:active, .filter-btn:active { transform: scale(0.95); }
+        .toggle-alert-btn.enabled {
+            background: #00d4ff;
+        }
+        .refresh-btn:hover, .filter-btn:hover, .toggle-alert-btn:hover {
+            background: #00b8d4;
+        }
+        .toggle-alert-btn:hover {
+            background: #e05a5a;
+        }
+        .toggle-alert-btn.enabled:hover {
+            background: #00b8d4;
+        }
+        .refresh-btn:active, .filter-btn:active, .toggle-alert-btn:active { transform: scale(0.95); }
         .stats { font-size: 1.1em; margin: 20px 0; color: #a3bffa; }
         #magnitudeChart { max-width: 600px; margin: 20px auto; }
         footer { margin-top: 40px; font-size: 0.95em; color: #778da9; }
@@ -300,6 +327,7 @@
             <button class="filter-btn" onclick="setFilter('1h')">Last Hour</button>
             <button class="filter-btn" onclick="setFilter('24h')">Last 24 Hours</button>
             <button class="filter-btn" onclick="setFilter('all')">All Recent</button>
+            <button class="toggle-alert-btn enabled" id="toggleAlertButton" onclick="toggleAlertSound()">Désactiver l'alerte sonore</button>
         </div>
         <div class="no-data" id="noDataMessage" style="display: none;">No recent earthquakes detected within 2000 km of Bangkok.</div>
         <div class="news-feed" id="newsFeed">
@@ -348,6 +376,8 @@
         let filterPeriod = '1h'; // Par défaut pour les données sismiques : Last Hour
         let newsFilterPeriod = '24h'; // Par défaut pour les actualités : Last 24 Hours
         let chart;
+        let alertSoundEnabled = true; // État global de l'alerte sonore
+        let seenQuakes = JSON.parse(localStorage.getItem('seenQuakes')) || []; // Liste des tremblements de terre "vus"
 
         let map;
         try {
@@ -377,6 +407,7 @@
                 const data = await response.json();
                 console.log('Data received:', data);
                 return data.features && data.features.length ? data.features.map(quake => ({
+                    id: quake.id, // Ajout de l'ID pour identifier chaque tremblement de terre
                     time: quake.properties.time ? new Date(quake.properties.time).toLocaleString() : 'Unknown time',
                     magnitude: quake.properties.mag !== null ? quake.properties.mag : 'N/A',
                     location: quake.properties.place || 'Unknown',
@@ -401,6 +432,20 @@
             return R * c;
         }
 
+        function markAsSeen(quakeId) {
+            if (!seenQuakes.includes(quakeId)) {
+                seenQuakes.push(quakeId);
+                localStorage.setItem('seenQuakes', JSON.stringify(seenQuakes));
+            }
+        }
+
+        function toggleAlertSound() {
+            alertSoundEnabled = !alertSoundEnabled;
+            const toggleButton = document.getElementById('toggleAlertButton');
+            toggleButton.textContent = alertSoundEnabled ? 'Désactiver l\'alerte sonore' : 'Activer l\'alerte sonore';
+            toggleButton.classList.toggle('enabled', alertSoundEnabled);
+        }
+
         function displayEarthquakes(data, error = null) {
             const list = document.getElementById('earthquakeList');
             const noDataMessage = document.getElementById('noDataMessage');
@@ -422,10 +467,14 @@
                     }
                     const magNum = typeof quake.magnitude === 'number' ? quake.magnitude : 0;
                     const magClass = magNum >= 6 ? 'high' : magNum >= 4 ? 'medium' : 'low';
-                    if (magNum >= 5) document.getElementById('alertSound').play();
+                    const isSeen = seenQuakes.includes(quake.id);
+                    if (magNum >= 5 && !isSeen && alertSoundEnabled) {
+                        document.getElementById('alertSound').play();
+                    }
                     const card = document.createElement('div');
                     card.className = 'earthquake-card';
                     card.innerHTML = `
+                        <button class="seen-btn" onclick="markAsSeen('${quake.id}')">Vu</button>
                         <div class="magnitude ${magClass}">${quake.magnitude}</div>
                         <p><strong>Location:</strong> ${quake.location}</p>
                         <p><strong>Time:</strong> ${quake.time}</p>
@@ -496,8 +545,12 @@
             try {
                 console.log(`Fetching news for ${location} with URL: ${url}`);
                 const response = await fetch(url);
-                if (!response.ok) throw new Error(`HTTP error: ${response.status} - ${await response.text()}`);
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error: ${response.status} - ${errorText}`);
+                }
                 const data = await response.json();
+                console.log(`News data for ${location}:`, data);
                 return data.articles ? data.articles : [];
             } catch (error) {
                 console.error(`News fetch error for ${location}:`, error);
@@ -537,7 +590,7 @@
         async function displayNews(location, elementId) {
             const newsList = document.getElementById(elementId);
             newsList.innerHTML = `<p>Loading news for ${location}...</p>`;
-            const query = `${location} earthquake`; // Recherche générale sur les tremblements de terre
+            const query = `${location} earthquake OR seismic OR disaster`; // Requête élargie pour plus de résultats
             const articles = await fetchNews(query, location);
 
             // Supprimer les doublons en comparant les URLs
@@ -557,7 +610,7 @@
 
             newsList.innerHTML = '';
             if (uniqueArticles.length === 0) {
-                newsList.innerHTML = `<p>No recent news found for ${location} in the selected time period.</p>`;
+                newsList.innerHTML = `<p>No recent news found for ${location} in the selected time period. Try refreshing or checking the console for errors.</p>`;
             } else {
                 uniqueArticles.forEach(article => {
                     const newsItem = document.createElement('div');
