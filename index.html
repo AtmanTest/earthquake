@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Earthquake Monitor - Bangkok</title>
+    <title>Earthquake Monitor for Peebabe</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -24,6 +24,7 @@
         h1 {
             font-size: 3.5em;
             margin: 0 0 20px;
+            padding-top: 120px; /* Add padding to avoid overlap with logo */
             color: #00d4ff;
             text-shadow: 0 0 10px rgba(0, 212, 255, 0.7);
             animation: glow 2s infinite alternate;
@@ -234,9 +235,11 @@
         .news-list {
             display: flex;
             transition: transform 0.5s ease-in-out;
+            width: 100%;
         }
         .news-item {
-            flex: 0 0 100%;
+            flex: 0 0 100%; /* Each news item takes the full width of the carousel */
+            box-sizing: border-box;
             padding: 10px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             transition: background 0.3s ease;
@@ -318,7 +321,7 @@
             <img src="logo.png" alt="Logo" class="logo">
             <div class="orbit"></div>
         </div>
-        <h1>Earthquake Monitor - Bangkok</h1>
+        <h1>Earthquake Monitor for Peebabe</h1>
         <div id="map"></div>
         <div class="update-info" id="lastUpdate">Last Update: Loading...</div>
         <div class="button-group">
@@ -547,11 +550,15 @@
         const mockNewsData = {
             bangkok: [
                 { title: "Skyscraper Collapses in Bangkok Amid Earthquake", url: "#", publishedAt: "2025-03-28T09:52:00Z" },
-                { title: "Rescue Efforts Underway in Bangkok After Quake", url: "#", publishedAt: "2025-03-29T03:22:00Z" }
+                { title: "Rescue Efforts Underway in Bangkok After Quake", url: "#", publishedAt: "2025-03-29T03:22:00Z" },
+                { title: "Bangkok Earthquake Causes Widespread Panic", url: "#", publishedAt: "2025-03-29T02:15:00Z" },
+                { title: "Aftershocks Reported in Bangkok Region", url: "#", publishedAt: "2025-03-29T01:00:00Z" }
             ],
             myanmar: [
                 { title: "Over 1,000 Dead in Myanmar Earthquake", url: "#", publishedAt: "2025-03-29T03:22:00Z" },
-                { title: "Myanmar Declares State of Emergency", url: "#", publishedAt: "2025-03-29T01:39:00Z" }
+                { title: "Myanmar Declares State of Emergency", url: "#", publishedAt: "2025-03-29T01:39:00Z" },
+                { title: "International Aid Arrives in Myanmar", url: "#", publishedAt: "2025-03-29T00:45:00Z" },
+                { title: "Myanmar Earthquake Displaces Thousands", url: "#", publishedAt: "2025-03-28T23:30:00Z" }
             ]
         };
 
