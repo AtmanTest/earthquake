@@ -110,6 +110,70 @@
             box-shadow: 0 0 10px rgba(255, 149, 0, 0.7);
             animation: loadingBar 60s linear infinite;
         }
+        .seen-quakes {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+        }
+        .seen-quakes h2 {
+            font-size: 1.5em;
+            color: #00d4ff;
+            margin-bottom: 15px;
+        }
+        .seen-quakes ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .seen-quakes li {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 1em;
+            color: #a3bffa;
+        }
+        .seen-quakes li:last-child {
+            border-bottom: none;
+        }
+        .emergency-measures {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+            text-align: left;
+        }
+        .emergency-measures h2 {
+            font-size: 1.5em;
+            color: #ff6b6b;
+            margin-bottom: 15px;
+        }
+        .emergency-measures h3 {
+            font-size: 1.2em;
+            color: #00d4ff;
+            margin-top: 15px;
+            margin-bottom: 10px;
+        }
+        .emergency-measures p, .emergency-measures ul {
+            font-size: 1em;
+            color: #e0e0e0;
+            margin: 10px 0;
+        }
+        .emergency-measures ul {
+            padding-left: 20px;
+        }
+        .emergency-measures li {
+            margin-bottom: 10px;
+        }
+        .emergency-measures a {
+            color: #a3bffa;
+            text-decoration: none;
+        }
+        .emergency-measures a:hover {
+            color: #00d4ff;
+            text-decoration: underline;
+        }
         .button-group {
             display: flex;
             justify-content: center;
@@ -238,7 +302,7 @@
             width: 100%;
         }
         .news-item {
-            flex: 0 0 100%; /* Each news item takes the full width of the carousel */
+            flex: 0 0 100%;
             box-sizing: border-box;
             padding: 10px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -324,6 +388,10 @@
         <h1>Earthquake Monitor for Peebabe</h1>
         <div id="map"></div>
         <div class="update-info" id="lastUpdate">Last Update: Loading...</div>
+        <div class="seen-quakes" id="seenQuakes">
+            <h2>Seen Earthquakes History</h2>
+            <ul id="seenQuakesList"></ul>
+        </div>
         <div class="button-group">
             <button class="refresh-btn" id="refreshButton">Refresh Now</button>
             <button class="filter-btn" onclick="setFilter('1h')">Last Hour</button>
@@ -332,6 +400,33 @@
             <button class="toggle-alert-btn enabled" id="toggleAlertButton" onclick="toggleAlertSound()">Disable Alert Sound</button>
         </div>
         <div class="no-data" id="noDataMessage" style="display: none;">No recent earthquakes detected within 2000 km of Bangkok.</div>
+        <div class="emergency-measures">
+            <h2>Emergency Measures and Actions to Take</h2>
+            <h3>During an Earthquake</h3>
+            <ul>
+                <li><strong>Drop, Cover, and Hold On:</strong> Drop to your hands and knees, cover your head and neck (under a sturdy table if possible), and hold on until the shaking stops.</li>
+                <li><strong>Stay Indoors:</strong> Avoid running outside during the shaking. Falling debris can be dangerous.</li>
+                <li><strong>Avoid Doorways:</strong> Doorways are not necessarily safer and may swing violently.</li>
+                <li><strong>Stay Away from Windows:</strong> Glass can shatter and cause injuries.</li>
+            </ul>
+            <h3>After an Earthquake</h3>
+            <ul>
+                <li><strong>Check for Injuries:</strong> Provide first aid if needed and seek medical help for serious injuries.</li>
+                <li><strong>Inspect for Hazards:</strong> Check for gas leaks, fires, or damaged electrical wiring. Evacuate if the building is unsafe.</li>
+                <li><strong>Be Prepared for Aftershocks:</strong> Aftershocks can occur hours or days after the initial quake.</li>
+                <li><strong>Listen to Authorities:</strong> Follow instructions from local authorities or emergency services for updates and safety measures.</li>
+            </ul>
+            <h3>Emergency Contacts in Bangkok, Thailand</h3>
+            <ul>
+                <li><strong>Police:</strong> 191</li>
+                <li><strong>Medical Emergency/Ambulance:</strong> 1669</li>
+                <li><strong>Fire Department:</strong> 199</li>
+                <li><strong>Thailand Tourist Police (for tourists):</strong> 1155</li>
+                <li><strong>Department of Disaster Prevention and Mitigation (DDPM):</strong> <a href="tel:+6626373000">+66 2 637 3000</a></li>
+                <li><strong>Bangkok Metropolitan Administration (BMA) Hotline:</strong> 1555</li>
+            </ul>
+            <p>For more information, visit the <a href="https://www.ddpm.go.th/en" target="_blank">Department of Disaster Prevention and Mitigation</a> website.</p>
+        </div>
         <div class="news-feed" id="newsFeed">
             <h2>Latest News</h2>
             <div class="tabs">
@@ -382,6 +477,7 @@
         let chart;
         let alertSoundEnabled = true; // Global alert sound state
         let seenQuakes = JSON.parse(localStorage.getItem('seenQuakes')) || []; // List of "seen" earthquakes
+        let seenQuakesData = JSON.parse(localStorage.getItem('seenQuakesData')) || []; // Store full data of seen quakes
         let map;
 
         // Initialize the map with error handling
@@ -436,6 +532,17 @@
             }
         }
 
+        // Parse location to extract country and city
+        function parseLocation(location) {
+            if (!location || location === 'Unknown') return { country: 'Unknown', city: 'Unknown' };
+            const parts = location.split(',').map(part => part.trim());
+            let country = parts[parts.length - 1] || 'Unknown';
+            let city = parts[parts.length - 2] || parts[0] || 'Unknown';
+            // Clean up city name by removing distance and direction (e.g., "10 km S of Yangon" -> "Yangon")
+            city = city.replace(/^\d+\s*km\s*[NSEW]+\s*of\s*/i, '');
+            return { country, city };
+        }
+
         // Calculate distance between two coordinates
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371;
@@ -448,12 +555,36 @@
             return R * c;
         }
 
-        // Mark an earthquake as seen
+        // Mark an earthquake as seen and store its data
         function markAsSeen(quakeId) {
-            if (!seenQuakes.includes(quakeId)) {
+            const quake = currentQuakes.find(q => q.id === quakeId);
+            if (quake && !seenQuakes.includes(quakeId)) {
                 seenQuakes.push(quakeId);
+                seenQuakesData.push({
+                    id: quake.id,
+                    magnitude: quake.magnitude,
+                    location: quake.location
+                });
                 localStorage.setItem('seenQuakes', JSON.stringify(seenQuakes));
+                localStorage.setItem('seenQuakesData', JSON.stringify(seenQuakesData));
+                displaySeenQuakes();
             }
+        }
+
+        // Display seen earthquakes
+        function displaySeenQuakes() {
+            const seenQuakesList = document.getElementById('seenQuakesList');
+            seenQuakesList.innerHTML = '';
+            if (seenQuakesData.length === 0) {
+                seenQuakesList.innerHTML = '<li>No seen earthquakes yet.</li>';
+                return;
+            }
+            seenQuakesData.forEach(quake => {
+                const { country, city } = parseLocation(quake.location);
+                const li = document.createElement('li');
+                li.textContent = `Magnitude: ${quake.magnitude} | Country: ${country} | City: ${city}`;
+                seenQuakesList.appendChild(li);
+            });
         }
 
         // Toggle alert sound
@@ -464,12 +595,16 @@
             toggleButton.classList.toggle('enabled', alertSoundEnabled);
         }
 
+        let currentQuakes = []; // Store current earthquakes for reference
+
         // Display earthquake data
         function displayEarthquakes(data, error = null) {
             const list = document.getElementById('earthquakeList');
             const noDataMessage = document.getElementById('noDataMessage');
             list.innerHTML = '';
             if (map) map.eachLayer(layer => { if (layer instanceof L.Marker) map.removeLayer(layer); });
+
+            currentQuakes = data; // Store current quakes for reference in markAsSeen
 
             if (error) {
                 list.innerHTML = `<p class="no-data">Error loading data: ${error.message}</p>`;
@@ -516,6 +651,7 @@
             chart.update();
 
             updateLastUpdate();
+            displaySeenQuakes();
         }
 
         // Update the last update timestamp
@@ -682,6 +818,7 @@
         });
         setInterval(refreshData, 60000);
         refreshNews();
+        displaySeenQuakes();
     </script>
 </body>
 </html>
