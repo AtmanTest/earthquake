@@ -429,17 +429,17 @@
             refreshData();
         }
 
-        // Fonction pour récupérer les actualités via NewsAPI
-        async function fetchNews(query) {
-            const apiKey = 'YOUR_NEWSAPI_KEY'; // Remplacez par votre clé API NewsAPI
-            const url = `https://newsapi.org/v2/everything?q=${query}+earthquake+2025&language=en&sortBy=publishedAt&apiKey=${apiKey}`;
+        // Fonction pour récupérer les actualités via GNews API
+        async function fetchNews(query, location) {
+            const apiKey = 'a87f311a5f7a856185c4133ec952c246'; // Clé API GNews fournie
+            const url = `https://gnews.io/api/v4/search?q=${encodeURIComponent(query)}&lang=en&max=5&apikey=${apiKey}`;
             try {
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
                 const data = await response.json();
-                return data.articles ? data.articles.slice(0, 5) : []; // Limite à 5 articles
+                return data.articles ? data.articles : [];
             } catch (error) {
-                console.error(`News fetch error for ${query}:`, error);
+                console.error(`News fetch error for ${location}:`, error);
                 return [];
             }
         }
@@ -448,10 +448,11 @@
         async function displayNews(location, elementId) {
             const newsList = document.getElementById(elementId);
             newsList.innerHTML = `<p>Loading news for ${location}...</p>`;
-            const articles = await fetchNews(location);
+            const query = `${location} earthquake "2025-03-28"`; // Recherche spécifique pour le tremblement de terre du 28 mars 2025
+            const articles = await fetchNews(query, location);
             newsList.innerHTML = '';
             if (articles.length === 0) {
-                newsList.innerHTML = `<p>No recent news found for ${location}.</p>`;
+                newsList.innerHTML = `<p>No recent news found for ${location} related to the earthquake on March 28, 2025.</p>`;
             } else {
                 articles.forEach(article => {
                     const newsItem = document.createElement('div');
